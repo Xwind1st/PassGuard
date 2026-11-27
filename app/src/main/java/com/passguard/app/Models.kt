@@ -80,72 +80,75 @@ object PassStore {
         prefs(ctx).edit().putBoolean("exhausted", value).apply()
     }
 
-    fun clear(ctx: Context, keepHistory: Boolean, usedNow: Long) {
+    /** Supprime le forfait actif. Si keepSummary, garde un court résumé consultable dans l'espace personnel (F11). */
+    fun clear(ctx: Context, keepSummary: Boolean, usedAtDeletion: Long) {
         val current = load(ctx)
-        val e = prefs(ctx).edit().clear()
-        if (keepHistory && current != null) {
-            e.putLong("hist_used", usedNow)
-                .putLong("hist_total", current.totalBytes)
-                .putLong("hist_start", current.startMs)
-                .putLong("hist_end", current.endMs)
+        if (keepSummary && current != null) {
+            LastSummary.save(ctx, usedAtDeletion, current.totalBytes, current.startMs, System.currentTimeMillis())
+        } else {
+            LastSummary.clear(ctx)
         }
-        e.apply()
-    }
-
-    fun lastSummary(ctx: Context): Pass? {
-        val p = prefs(ctx)
-        if (!p.contains("hist_total")) return null
-        return Pass(
-            totalBytes = p.getLong("hist_total", 0L),
-            startMs = p.getLong("hist_start", 0L),
-            endMs = p.getLong("hist_end", 0L)
-        ).let { it to p.getLong("hist_used", 0L) }.first
-    }
-
-    fun lastSummaryUsed(ctx: Context): Long =
-        prefs(ctx).getLong("hist_used", 0L)
-}
-
-object Heartbeat {
-    fun beat(ctx: Context) {
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putLong("heartbeat", System.currentTimeMillis()).apply()
-    }
-
-    fun isStale(ctx: Context): Boolean {
-        val t = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong("heartbeat", 0L)
-        return t > 0L && System.currentTimeMillis() - t > 45_000L
-    }
-}
-
-object Tracker {
-    fun reset(ctx: Context) {
-        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .remove("base_rx")
-            .remove("base_tx")
+        prefs(ctx).edit()
+            .remove("total").remove("start").remove("end").remove("alert").remove("exhausted")
+            .remove("acc").remove("ctr").remove("elapsed")
             .apply()
     }
 }
 
-fun currentUsed(ctx: Context, pass: Pass): Long =
-    UsageReader.mobileUsedSince(ctx, pass.startMs)
+/** Court résumé du dernier forfait supprimé (F11), si l'utilisateur a choisi de le garder. */
+object LastSummary {
+    fun save(ctx: Context, used: Long, total: Long, startMs: Long, endMs: Long) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString("last_summary", "$used|$total|$startMs|$endMs")
+            .apply()
+    }
 
+    /** Retourne (utilisé, total, début, fin) ou null si rien n'a été gardé. */
+    fun read(ctx: Context): LongArray? {
+        val raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("last_summary", null) ?: return null
+        val parts = raw.split("|").mapNotNull { it.toLongOrNull() }
+        return if (parts.size == 4) parts.toLongArray() else null
+    }
+
+    fun clear(ctx: Context) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove("last_summary").apply()
+    }
+}
+
+/** Horodatage du dernier passage du service : permet à l'interface de savoir si le suivi s'est tu sans le vouloir. */
+object Heartbeat {
+    private const val KEY = "heartbeat"
+    private const val STALE_MS = 20_000L
+
+    fun touch(ctx: Context) {
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong(KEY, System.currentTimeMillis()).apply()
+    }
+
+    fun isStale(ctx: Context): Boolean {
+        val last = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getLong(KEY, 0L)
+        return System.currentTimeMillis() - last > STALE_MS
+    }
+}
+
+/** Calcule un nouveau Pass après un complément (F2 bis) : volume ajouté, durée prolongée en option, historique conservé. */
 fun completePass(current: Pass, addBytes: Long, addDurationMs: Long, usedNow: Long): Pass {
-    val newTotal = current.totalBytes + addBytes
-    val newEnd = if (addDurationMs > 0L) current.endMs + addDurationMs else current.endMs
-    val percent = if (newTotal > 0L) ((usedNow * 100L) / newTotal).toInt().coerceIn(0, 100) else 0
+    val now = System.currentTimeMillis()
+    val newTotal = current.totalBytes + addBytes.coerceAtLeast(0L)
+    val newEnd = if (addDurationMs > 0L) maxOf(current.endMs, now) + addDurationMs else current.endMs
+    val newPercent = if (newTotal > 0L) (usedNow * 100L / newTotal).toInt().coerceIn(0, 100) else 0
     return current.copy(
         totalBytes = newTotal,
         endMs = newEnd,
-        lastAlert = rearmedAlertLevel(current.lastAlert, percent),
-        exhausted = false
+        lastAlert = rearmedAlertLevel(current.lastAlert, newPercent),
+        exhausted = usedNow >= newTotal
     )
 }
 
-fun withUnattributed(exact: Long, apps: List<AppUsage>, label: String): List<AppUsage> {
-    val attributed = apps.sumOf { it.bytes }
-    val gap = exact - attributed
-    val threshold = maxOf(32_768L, exact / 100L)
+/** Ajoute une ligne « Non attribué / système » quand l'écart entre le total exact et la somme des applications est significatif. */
+fun withUnattributed(exactTotal: Long, apps: List<AppUsage>, label: String): List<AppUsage> {
+    val sum = apps.sumOf { it.bytes }
+    val gap = (exactTotal - sum).coerceAtLeast(0L)
+    val threshold = maxOf(200 * KB, exactTotal / 50) // au moins 200 Ko, ou 2 % du total, pour éviter le bruit
     if (gap < threshold) return apps
     return apps + AppUsage(uid = -999, name = label, bytes = gap, bgBytes = 0L)
 }
@@ -186,5 +189,5 @@ fun formatRemainingTime(ms: Long, lang: String): String {
 
 fun formatShortDate(ms: Long, lang: String): String {
     val locale = if (lang == "en") Locale.US else Locale.FRANCE
-    return SimpleDateFormat("dd MMM yyyy", locale).format(Date(ms))
+    return SimpleDateFormat("d MMM", locale).format(Date(ms))
 }
