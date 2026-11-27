@@ -12,29 +12,33 @@ Application Android qui montre en temps réel comment ton forfait de données mo
 ## Premier lancement
 
 1. Autorise l’accès à l’utilisation pour PassGuard.
-2. Fixe ton forfait : quantité (Mo/Go) et durée en **jours + heures en même temps**.
+2. Fixe ton forfait : quantité (Mo/Go) et **date + heure de fin** (calendrier et horloge).
 3. Laisse la notification active. Sur Tecno, Infinix ou Xiaomi, va dans l’espace personnel pour retirer PassGuard des économies de batterie.
 
 ## Versions
 
-### v0.2 (actuelle)
+### v0.3 (actuelle)
 
-- Durée de validité : **jours et heures simultanément** (plus le choix exclusif heure *ou* jour).
-- Même logique dans « Compléter » pour prolonger la durée.
-- Exemple : il te reste 1,2 Go jusqu’au 28 à 15 h → saisis la quantité, puis les jours et heures restants jusqu’à cette échéance.
+- Fin de forfait par **calendrier + horloge** : jour, heure, minutes et secondes.
+- Tu consultes le délai chez l’opérateur (ex. 28 novembre à 15 h), tu le saisis tel quel dans PassGuard.
+- **Compléter** : prolongation optionnelle en jours, heures, minutes et secondes.
+
+### v0.2
+
+- Durée relative jours + heures simultanément (remplacée en saisie principale par le calendrier en v0.3).
 
 ### v0.1
 
-- Réservoir, débit 3–5 s, notification 1 s / 15 s, alertes 30/50/80/90/100 %, Compléter, Qui consomme, Espace perso FR/EN, relance auto/manuelle.
+- Réservoir, débit, notification, alertes 30/50/80/90/100 %, Compléter, Qui consomme, Espace perso FR/EN.
 
 ## Feuille de route (décalée)
 
 | Version | Contenu |
 |--------|---------|
-| **v0.2** | Jours + heures ensemble pour la validité (fait) |
-| **v0.3** | Ajustements UX et compatibilité constructeurs (ex-v0.2) |
-| **v0.4** | Écran détaillé « Répartition » par source (ex-v0.3) |
-| **v0.5** | Fenêtre flottante + section « Pendant que le téléphone était posé » (ex-v0.4) |
+| **v0.3** | Calendrier + horloge pour la date de fin (fait) |
+| **v0.4** | Ajustements UX et compatibilité constructeurs |
+| **v0.5** | Écran détaillé « Répartition » par source |
+| **v0.6** | Fenêtre flottante + section « Pendant que le téléphone était posé » |
 | À décider | Alerte consommation inhabituelle du partage de connexion |
 | Publication | Fiche Play Store, confidentialité, test fermé |
 
