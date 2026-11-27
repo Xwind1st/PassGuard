@@ -28,9 +28,16 @@
     <string name="setup_amount_label">Amount</string>
     <string name="setup_unit_note">Here, 1 GB = 1024 MB.</string>
     <string name="setup_duration_label">Validity</string>
-    <string name="setup_duration_hint">Days and hours at the same time. E.g. 1 day and 5 hours if it ends tomorrow at the same time + 5 h.</string>
+    <string name="setup_end_label">End date and time</string>
+    <string name="setup_end_hint">Like your operator\'s calendar: pick the exact day and time the plan expires (e.g. 28 Nov at 15:00:00).</string>
+    <string name="setup_end_past">End date must be in the future.</string>
+    <string name="setup_pick_date">Pick date</string>
+    <string name="setup_pick_time">Pick time</string>
+    <string name="setup_picker_ok">OK</string>
     <string name="unit_hours">Hours</string>
     <string name="unit_days">Days</string>
+    <string name="unit_minutes">Minutes</string>
+    <string name="unit_seconds">Seconds</string>
     <string name="unit_mo">MB</string>
     <string name="unit_go">GB</string>
     <string name="setup_confirm">Set my plan</string>
@@ -71,6 +78,7 @@
     <string name="complete_subtitle">Your usage and history are kept.</string>
     <string name="complete_add_label">Amount to add</string>
     <string name="complete_extend_label">Extend validity (optional)</string>
+    <string name="complete_extend_hint">Days, hours, minutes and seconds to add to the current end date.</string>
     <string name="complete_confirm">Confirm</string>
     <string name="complete_cancel">Cancel</string>
 
