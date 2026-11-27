@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name">PassGuard</string>
+
+    <!-- Notifications -->
+    <string name="channel_live">Live tracking</string>
+    <string name="channel_alert">Plan alerts</string>
+    <string name="notif_starting">Tracking mobile data…</string>
+    <string name="notif_left_title">%1$s left</string>
+    <string name="notif_exhausted_title">Plan exhausted</string>
+    <string name="notif_live_text">Used %1$s of %2$s · %3$s</string>
+    <string name="notif_end_title">Plan ended</string>
+    <string name="notif_end_text">You used %1$s of %2$s. Set your next plan in PassGuard.</string>
+    <string name="alert_30">You have less than 70% of your plan left.</string>
+    <string name="alert_50">You have less than half of your plan left.</string>
+    <string name="alert_80">You have less than 20% of your plan left.</string>
+    <string name="alert_90">You have less than 10% of your plan left.</string>
+    <string name="alert_100">Your plan is exhausted. Open PassGuard to top it up.</string>
+
+    <!-- Permission screen -->
+    <string name="access_title">Allow data tracking</string>
+    <string name="access_body">Android only shares each app\'s data usage with your consent. PassGuard only reads byte totals — never your messages or the pages you visit.</string>
+    <string name="access_steps">1. Tap “Open settings”.\n2. Find PassGuard in the list.\n3. Turn on access for PassGuard.\n4. Come back to the app.</string>
+    <string name="access_button">Open settings</string>
+
+    <!-- Set plan -->
+    <string name="setup_title">Set your plan</string>
+    <string name="setup_subtitle">Do this right after subscribing — tracking starts at that moment.</string>
+    <string name="setup_amount_label">Amount</string>
+    <string name="setup_unit_note">Here, 1 GB = 1024 MB.</string>
+    <string name="setup_duration_label">Validity</string>
+    <string name="setup_end_label">End date and time</string>
+    <string name="setup_end_hint">Like your operator\'s calendar: pick the exact day and time the plan expires (e.g. 28 Nov at 15:00:00).</string>
+    <string name="setup_end_past">End date must be in the future.</string>
+    <string name="setup_pick_date">Pick date</string>
+    <string name="setup_pick_time">Pick time</string>
+    <string name="setup_picker_ok">OK</string>
+    <string name="unit_hours">Hours</string>
+    <string name="unit_days">Days</string>
+    <string name="unit_minutes">Minutes</string>
+    <string name="unit_seconds">Seconds</string>
+    <string name="unit_mo">MB</string>
+    <string name="unit_go">GB</string>
+    <string name="setup_confirm">Set my plan</string>
+    <string name="setup_cancel">Cancel</string>
+
+    <!-- Dashboard -->
+    <string name="dash_new_plan">New plan</string>
+    <string name="dash_complete">Top up</string>
+    <string name="dash_settings">Settings</string>
+    <string name="reservoir_exhausted">Plan exhausted</string>
+    <string name="reservoir_expired">Plan expired</string>
+    <string name="reservoir_left">You have left</string>
+    <string name="dash_of_total">of %1$s · %2$d%% used</string>
+    <string name="dash_now_label">Right now</string>
+    <string name="dash_valid_label">Still valid for</string>
+    <string name="dash_who_title">Who\'s using data</string>
+    <string name="dash_who_subtitle">Since you set your plan</string>
+    <string name="dash_calculating">Calculating…</string>
+    <string name="dash_empty">Nothing used yet. Use the internet for a bit, then check back.</string>
+    <string name="dash_disclaimer">PassGuard counts the bytes that go through this phone\'s mobile data. Your operator\'s own count may differ slightly. The per-app breakdown comes from Android and can lag by an hour or two at first.</string>
+    <string name="dash_battery_link">If tracking stops: battery settings</string>
+    <string name="dash_delete">Delete this plan</string>
+    <string name="dash_bg_part">including %1$s in background</string>
+    <string name="dash_unattributed">Unattributed / system</string>
+    <string name="dash_tracking_active">Tracking active</string>
+    <string name="dash_tracking_paused">Tracking paused</string>
+    <string name="dash_relaunch">Relaunch</string>
+
+    <!-- Delete -->
+    <string name="delete_title">Delete this plan?</string>
+    <string name="delete_keep_desc">A summary (usage, dates) will stay visible in your personal space.</string>
+    <string name="delete_confirm_keep">Delete and keep summary</string>
+    <string name="delete_confirm_discard">Delete without keeping summary</string>
+    <string name="delete_cancel">Cancel</string>
+
+    <!-- Top up -->
+    <string name="complete_title">Top up your plan</string>
+    <string name="complete_subtitle">Your usage and history are kept.</string>
+    <string name="complete_add_label">Amount to add</string>
+    <string name="complete_extend_label">Extend validity (optional)</string>
+    <string name="complete_extend_hint">Days, hours, minutes and seconds to add to the current end date.</string>
+    <string name="complete_confirm">Confirm</string>
+    <string name="complete_cancel">Cancel</string>
+
+    <!-- Personal space -->
+    <string name="settings_title">Personal space</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_lang_fr">Français</string>
+    <string name="settings_lang_en">English</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="settings_usage_access">Usage access</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_battery">Unrestricted battery</string>
+    <string name="settings_enabled">Enabled</string>
+    <string name="settings_setup_needed">Needs setup</string>
+    <string name="settings_open">Open</string>
+    <string name="settings_privacy">0 Internet permission, 0 data sent.</string>
+    <string name="settings_limits_title">Known limits</string>
+    <string name="settings_last_summary_title">Last deleted plan</string>
+    <string name="settings_last_summary">%1$s of %2$s, from %3$s to %4$s.</string>
+</resources>
