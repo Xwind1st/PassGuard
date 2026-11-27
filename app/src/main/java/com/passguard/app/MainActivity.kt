@@ -39,12 +39,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,6 +75,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -254,16 +264,44 @@ private fun AccessScreen() {
 
 // ---------- Écran 2 : fixer le forfait ----------
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SetupScreen(canCancel: Boolean, onCancel: () -> Unit, onSave: (Pass) -> Unit) {
     var amount by remember { mutableStateOf("") }
     var inGo by remember { mutableStateOf(true) }
-    var duration by remember { mutableStateOf("") }
-    var inDays by remember { mutableStateOf(true) }
+    // v0.3 : date + heure de fin via calendrier / horloge (jour, heure, min, sec)
+    val initialCal = remember {
+        Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, 1) }
+    }
+    var endYear by remember { mutableIntStateOf(initialCal.get(Calendar.YEAR)) }
+    var endMonth by remember { mutableIntStateOf(initialCal.get(Calendar.MONTH)) } // 0-based
+    var endDay by remember { mutableIntStateOf(initialCal.get(Calendar.DAY_OF_MONTH)) }
+    var endHour by remember { mutableIntStateOf(initialCal.get(Calendar.HOUR_OF_DAY)) }
+    var endMinute by remember { mutableIntStateOf(0) }
+    var endSecond by remember { mutableIntStateOf(0) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     val amountValue = amount.replace(',', '.').toDoubleOrNull()
-    val durationValue = duration.replace(',', '.').toDoubleOrNull()
-    val valid = amountValue != null && amountValue > 0.0 && durationValue != null && durationValue > 0.0
+    val endMs = remember(endYear, endMonth, endDay, endHour, endMinute, endSecond) {
+        Calendar.getInstance().apply {
+            set(Calendar.YEAR, endYear)
+            set(Calendar.MONTH, endMonth)
+            set(Calendar.DAY_OF_MONTH, endDay)
+            set(Calendar.HOUR_OF_DAY, endHour)
+            set(Calendar.MINUTE, endMinute)
+            set(Calendar.SECOND, endSecond)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+    val now = System.currentTimeMillis()
+    val valid = amountValue != null && amountValue > 0.0 && endMs > now
+
+    val lang = currentLang()
+    val endLabel = remember(endMs, lang) {
+        val locale = if (lang == "en") Locale.US else Locale.FRANCE
+        SimpleDateFormat("dd MMM yyyy · HH:mm:ss", locale).format(Date(endMs))
+    }
 
     Column(
         Modifier
@@ -295,34 +333,106 @@ private fun SetupScreen(canCancel: Boolean, onCancel: () -> Unit, onSave: (Pass)
             Text(stringResource(R.string.setup_unit_note), color = Muted, fontSize = 13.sp)
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.setup_end_label), color = Ink, fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.setup_end_hint), color = Muted, fontSize = 13.sp)
+            Text(endLabel, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TextButton(onClick = { showDatePicker = true }) {
+                    Text(stringResource(R.string.setup_pick_date), color = Ink)
+                }
+                TextButton(onClick = { showTimePicker = true }) {
+                    Text(stringResource(R.string.setup_pick_time), color = Ink)
+                }
+            }
             OutlinedTextField(
-                value = duration,
-                onValueChange = { duration = it.filter { c -> c.isDigit() || c == ',' || c == '.' } },
-                label = { Text(stringResource(R.string.setup_duration_label)) },
+                value = endSecond.toString(),
+                onValueChange = {
+                    val n = it.filter { c -> c.isDigit() }.toIntOrNull()
+                    if (n == null) endSecond = 0
+                    else endSecond = n.coerceIn(0, 59)
+                },
+                label = { Text(stringResource(R.string.unit_seconds)) },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.weight(1f)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
             )
-            Pill(stringResource(R.string.unit_hours), !inDays) { inDays = false }
-            Pill(stringResource(R.string.unit_days), inDays) { inDays = true }
+            if (endMs <= now) {
+                Text(stringResource(R.string.setup_end_past), color = Danger, fontSize = 13.sp)
+            }
         }
 
         PrimaryButton(stringResource(R.string.setup_confirm), enabled = valid) {
             val a = amountValue
-            val d = durationValue
-            if (a != null && d != null && a > 0.0 && d > 0.0) {
-                val now = System.currentTimeMillis()
+            if (a != null && a > 0.0 && endMs > System.currentTimeMillis()) {
                 val bytes = (a * (if (inGo) GB else MB)).toLong()
-                val span = (d * (if (inDays) DAY_MS else HOUR_MS)).toLong()
-                onSave(Pass(totalBytes = bytes, startMs = now, endMs = now + span))
+                onSave(Pass(totalBytes = bytes, startMs = System.currentTimeMillis(), endMs = endMs))
             }
         }
         if (canCancel) {
             TextButton(onClick = onCancel) { Text(stringResource(R.string.setup_cancel), color = Ink) }
+        }
+    }
+
+    if (showDatePicker) {
+        val initialDateMs = remember(endYear, endMonth, endDay) {
+            Calendar.getInstance().apply {
+                set(endYear, endMonth, endDay, 12, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+        }
+        val dateState = rememberDatePickerState(initialSelectedDateMillis = initialDateMs)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    dateState.selectedDateMillis?.let { selected ->
+                        val c = Calendar.getInstance().apply { timeInMillis = selected }
+                        endYear = c.get(Calendar.YEAR)
+                        endMonth = c.get(Calendar.MONTH)
+                        endDay = c.get(Calendar.DAY_OF_MONTH)
+                    }
+                    showDatePicker = false
+                }) { Text(stringResource(R.string.setup_picker_ok), color = Ink) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.setup_cancel), color = Muted)
+                }
+            }
+        ) {
+            DatePicker(state = dateState)
+        }
+    }
+
+    if (showTimePicker) {
+        val timeState = rememberTimePickerState(
+            initialHour = endHour,
+            initialMinute = endMinute,
+            is24Hour = true
+        )
+        Dialog(onDismissRequest = { showTimePicker = false }) {
+            Column(
+                Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Paper)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(stringResource(R.string.setup_pick_time), fontWeight = FontWeight.Bold, color = Ink)
+                TimePicker(state = timeState)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { showTimePicker = false }) {
+                        Text(stringResource(R.string.setup_cancel), color = Muted)
+                    }
+                    TextButton(onClick = {
+                        endHour = timeState.hour
+                        endMinute = timeState.minute
+                        showTimePicker = false
+                    }) { Text(stringResource(R.string.setup_picker_ok), color = Ink) }
+                }
+            }
         }
     }
 }
@@ -597,11 +707,23 @@ private fun AppRow(app: AppUsage, biggest: Long, lang: String) {
 private fun CompleteDialog(onDismiss: () -> Unit, onConfirm: (addBytes: Long, addDurationMs: Long) -> Unit) {
     var amount by remember { mutableStateOf("") }
     var inGo by remember { mutableStateOf(true) }
-    var duration by remember { mutableStateOf("") }
-    var inDays by remember { mutableStateOf(true) }
+    // v0.3 : prolongation optionnelle jours + heures + minutes + secondes
+    var daysText by remember { mutableStateOf("") }
+    var hoursText by remember { mutableStateOf("") }
+    var minutesText by remember { mutableStateOf("") }
+    var secondsText by remember { mutableStateOf("") }
 
     val amountValue = amount.replace(',', '.').toDoubleOrNull()
-    val durationValue = duration.replace(',', '.').toDoubleOrNull()
+    val daysValue = daysText.filter { it.isDigit() }.toLongOrNull() ?: 0L
+    val hoursValue = hoursText.filter { it.isDigit() }.toLongOrNull() ?: 0L
+    val minutesValue = minutesText.filter { it.isDigit() }.toLongOrNull() ?: 0L
+    val secondsValue = secondsText.filter { it.isDigit() }.toLongOrNull() ?: 0L
+    val addDurationMs = (
+        daysValue * DAY_MS +
+            hoursValue * HOUR_MS +
+            minutesValue * MINUTE_MS +
+            secondsValue * SECOND_MS
+        ).coerceAtLeast(0L)
     val valid = amountValue != null && amountValue > 0.0
 
     Dialog(onDismissRequest = onDismiss) {
@@ -630,25 +752,49 @@ private fun CompleteDialog(onDismiss: () -> Unit, onConfirm: (addBytes: Long, ad
             }
 
             Text(stringResource(R.string.complete_extend_label), color = Ink, fontWeight = FontWeight.Medium)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.complete_extend_hint), color = Muted, fontSize = 13.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
-                    value = duration,
-                    onValueChange = { duration = it.filter { c -> c.isDigit() || c == ',' || c == '.' } },
+                    value = daysText,
+                    onValueChange = { daysText = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.unit_days)) },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
-                Pill(stringResource(R.string.unit_hours), !inDays) { inDays = false }
-                Pill(stringResource(R.string.unit_days), inDays) { inDays = true }
+                OutlinedTextField(
+                    value = hoursText,
+                    onValueChange = { hoursText = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.unit_hours)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = minutesText,
+                    onValueChange = { minutesText = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.unit_minutes)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = secondsText,
+                    onValueChange = { secondsText = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.unit_seconds)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f)
+                )
             }
 
             PrimaryButton(stringResource(R.string.complete_confirm), enabled = valid) {
                 val a = amountValue
                 if (a != null && a > 0.0) {
                     val addBytes = (a * (if (inGo) GB else MB)).toLong()
-                    val d = durationValue
-                    val addDuration = if (d != null && d > 0.0) (d * (if (inDays) DAY_MS else HOUR_MS)).toLong() else 0L
-                    onConfirm(addBytes, addDuration)
+                    onConfirm(addBytes, addDurationMs)
                 }
             }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.complete_cancel), color = Ink) }
