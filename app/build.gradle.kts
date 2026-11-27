@@ -12,8 +12,8 @@ android {
         applicationId = "com.passguard.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2"
+        versionCode = 3
+        versionName = "0.3"
     }
 
     buildTypes {
@@ -44,5 +44,5 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-    implementation("androidx.appcompat:appcompat:1.7.0") // AppCompatDelegate : langue FR/EN par application (F12 bis)
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }
