@@ -28,8 +28,9 @@
     <string name="setup_amount_label">Amount</string>
     <string name="setup_unit_note">Here, 1 GB = 1024 MB.</string>
     <string name="setup_duration_label">Validity</string>
-    <string name="unit_hours">hours</string>
-    <string name="unit_days">days</string>
+    <string name="setup_duration_hint">Days and hours at the same time. E.g. 1 day and 5 hours if it ends tomorrow at the same time + 5 h.</string>
+    <string name="unit_hours">Hours</string>
+    <string name="unit_days">Days</string>
     <string name="unit_mo">MB</string>
     <string name="unit_go">GB</string>
     <string name="setup_confirm">Set my plan</string>
