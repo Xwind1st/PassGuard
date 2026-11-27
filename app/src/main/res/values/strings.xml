@@ -28,8 +28,9 @@
     <string name="setup_amount_label">Quantité</string>
     <string name="setup_unit_note">Ici, 1 Go = 1024 Mo.</string>
     <string name="setup_duration_label">Durée de validité</string>
-    <string name="unit_hours">heures</string>
-    <string name="unit_days">jours</string>
+    <string name="setup_duration_hint">Jours et heures en même temps. Ex. : 1 jour et 5 heures si ça finit demain à la même heure + 5 h.</string>
+    <string name="unit_hours">Heures</string>
+    <string name="unit_days">Jours</string>
     <string name="unit_mo">Mo</string>
     <string name="unit_go">Go</string>
     <string name="setup_confirm">Fixer mon forfait</string>
